@@ -116,7 +116,7 @@ class RFBClient(Protocol):
     #------------------------------------------------------
 
     def _handleInitial(self):
-        buffer = ''.join(self._packet)
+        buffer = ''.join(str(self._packet))
         if '\n' in buffer:
             if buffer[:3] == 'RFB':
                 #~ print "rfb"
@@ -450,7 +450,7 @@ class RFBClient(Protocol):
 
     def _handleExpected(self):
         if self._packet_len >= self._expected_len:
-            buffer = ''.join(self._packet)
+            buffer = b''.join(self._packet)
             while len(buffer) >= self._expected_len:
                 self._already_expecting = 1
                 block, buffer = buffer[:self._expected_len], buffer[self._expected_len:]
@@ -601,25 +601,25 @@ if __name__ == '__main__':
     class RFBTest(RFBClient):
         """dummy client"""
         def vncConnectionMade(self):
-            print "Screen format: depth=%d bytes_per_pixel=%r" % (self.depth, self.bpp)
-            print "Desktop name: %r" % self.name
+            print("Screen format: depth={0:d} bytes_per_pixel={1:r}".format(self.depth, self.bpp))
+            print("Desktop name: {0:r}".format(self.name))
             self.SetEncodings([RAW_ENCODING])
             self.FramebufferUpdateRequest()
         
         def updateRectangle(self, x, y, width, height, data):
-            print "%s " * 5 % (x, y, width, height, repr(data[:20]))
+            print ("{0} {1} {2} {3} {4}".format(x, y, width, height, repr(data[:20])))
     
     class RFBTestFactory(protocol.ClientFactory):
         """test factory"""
         protocol = RFBTest
         def clientConnectionLost(self, connector, reason):
-            print reason
+            print(reason)
             from twisted.internet import reactor
             reactor.stop()
             #~ connector.connect()
     
         def clientConnectionFailed(self, connector, reason):
-            print "connection failed:", reason
+            print("connection failed: {0}".format(reason))
             from twisted.internet import reactor
             reactor.stop()
 
@@ -634,10 +634,10 @@ if __name__ == '__main__':
     o = Options()
     try:
         o.parseOptions()
-    except usage.UsageError, errortext:
-        print "%s: %s" % (sys.argv[0], errortext)
-        print "%s: Try --help for usage details." % (sys.argv[0])
-        raise SystemExit, 1
+    except usage.UsageError as errortext:
+        print ("{0}: {1}".format(sys.argv[0], errortext))
+        print("{0}: Try --help for usage details." % (sys.argv[0]))
+        raise SystemExit
 
     logFile = sys.stdout
     if o.opts['outfile']:

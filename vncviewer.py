@@ -161,7 +161,7 @@ class PyGameApp:
             #then communicate that to the protocol...
         else:
             #~ self.screen = pygame.display.set_mode(self.area.size, winstyle, depth)
-            raise ValueError, "color depth not supported"
+            raise ValueError("color depth not supported")
         self.background = pygame.Surface((self.width, self.height), depth)
         self.background.fill(0) #black
 
@@ -190,7 +190,7 @@ class PyGameApp:
                     elif e.unicode:
                         self.protocol.keyEvent(ord(e.unicode))
                     else:
-                        print "warning: unknown key %r" % (e)
+                        print("warning: unknown key {0}".format(e))
                 elif e.type == KEYUP:
                     if e.key in MODIFIERS:
                         self.protocol.keyEvent(MODIFIERS[e.key], down=0)
@@ -224,7 +224,6 @@ class PyGameApp:
            by using callLater"""
         #~ self.clock.tick()
         no_work = self.checkEvents()
-
         #~ self.sprites.clear(self.screen, self.background)
         #~ dirty = self.sprites.draw(self.screen)
         #~ pygame.display.update(dirty)
@@ -311,10 +310,10 @@ class RFBToGUI(rfb.RFBClient):
         self.screen.fill(struct.unpack("BBBB", color), (x, y, width, height))
 
     def bell(self):
-        print "katsching"
+        print("katsching")
 
     def copy_text(self, text):
-        print "Clipboard: %r" % text
+        print("Clipboard: {0}".format(text))
 
 #use a derrived class for other depths. hopefully with better performance
 #that a single class with complicated/dynamic color conversion.
@@ -339,6 +338,7 @@ class RFBToGUIeightbits(RFBToGUI):
         #~ assert len(data) == width*height
         bmp = pygame.image.fromstring(data, (width, height), 'P')
         bmp.set_palette(self.palette)
+        print("data?")
         self.screen.blit(bmp, (x, y))
 
     def fillRectangle(self, x, y, width, height, color):
@@ -356,7 +356,7 @@ class VNCFactory(rfb.RFBFactory):
         elif depth == 8:
             self.protocol = RFBToGUIeightbits
         else:
-            raise ValueError, "color depth not supported"
+            raise ValueError("color depth not supported")
             
         if fast:
             self.encodings = [
@@ -412,10 +412,10 @@ def main():
     o = Options()
     try:
         o.parseOptions()
-    except usage.UsageError, errortext:
-        print "%s: %s" % (sys.argv[0], errortext)
-        print "%s: Try --help for usage details." % (sys.argv[0])
-        raise SystemExit, 1
+    except usage.UsageError as errortext:
+        print("{0}: {1}".format(sys.argv[0], errortext))
+        print("%s: Try --help for usage details." % (sys.argv[0]))
+        raise SystemExit(1)
 
     depth = int(o.opts['depth'])
 
@@ -459,6 +459,7 @@ def main():
 
     # run the application
     reactor.callLater(0.1, remoteframebuffer.mainloop)
+
     reactor.run()
 
 
