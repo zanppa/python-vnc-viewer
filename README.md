@@ -1,3 +1,7 @@
+Feb 4: Python 3 format
+Bug exists
+-----
+
 Simple VNC viewer that is built with
 [Twisted-Python](https://twistedmatrix.com/trac/) and
 [PyGame](http://www.pygame.org/). Originally written by
