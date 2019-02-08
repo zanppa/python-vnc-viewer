@@ -12,13 +12,7 @@ The viewer supports the following encodings:
 
 The display is done using pygame because of it's good graphics
 performance, but any GUI system can be used as the code is
-modular and can be easily adapted. Two good examples of code
-reuse are
-[VNC client in browser](http://arkaitzj.wordpress.com/2011/11/12/vnc-in-your-browser-through-websockets-handled-by-gevent/)
-by Arkaitz Jimenez, and most recent
-[vncdotool](https://github.com/sibson/vncdotool) by Marc Sibson.
-Pygame version supports clipboard transfer, but it's not used in
-the sample application.
+modular and can be easily adapted.
 
 Python 3 adaptation
 -----
@@ -26,7 +20,7 @@ Log and print are converted to Python 3 format. Bytes string are converted to Py
 
 Using the latest pyDes from <https://github.com/twhiteman/pyDes>
 
-It can no longer to work in Python 2 since some Python 2 specific functions for bytes are removed.
+It can no longer work with Python 2 since some Python 2 specific functions for bytes are removed.
 
 ### Bugs
 
