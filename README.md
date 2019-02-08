@@ -1,7 +1,11 @@
+# Simple VNC viewer in python 3
+
 Simple VNC viewer that is built with
 [Twisted-Python](https://twistedmatrix.com/trac/) and
 [PyGame](http://www.pygame.org/). Originally written by
-[Chris Liechti](http://homepage.hispeed.ch/py430/python/).
+[Chris Liechti](http://homepage.hispeed.ch/py430/python/)
+
+This is the version that adapts to Python 3. Tested on Python 3.6.
 
 The viewer supports the following encodings:
   `Hextile, CoRRE, RRE, RAW, CopyRect`
@@ -16,11 +20,25 @@ by Arkaitz Jimenez, and most recent
 Pygame version supports clipboard transfer, but it's not used in
 the sample application.
 
+Python 3 adaptation
+-----
+Log and print are converted to Python 3 format. Bytes string are converted to Python 3 format.
+
+Using the latest pyDes from <https://github.com/twhiteman/pyDes>
+
+It can no longer to work in Python 2 since some Python 2 specific functions for bytes are removed.
+
+### Bugs
+
+Host name must using terminal to input.
+
+`python3 vncviewer.py --host=xxx.xxx.xxx.xxx --display=x`
+
 Usage
 -----
 You can simply start `vncviewer.py` and it will ask for a hostname
-and password if required. Hostnames are in the "host:display"
-form, where "display" is the VNC dispaly number.
+and password if required. 
+~~Hostnames are in the "host:display" form, where "display" is the VNC dispaly number.~~
 
 These settings can be passed through command line, but note
 it's a bad idea to pass the password in this way as it can be
@@ -72,17 +90,16 @@ References:
 -------
 - (c) 2003 chris <cliechti@gmx.net>
 - (c) 2009 techtonik <techtonik@gmail.com>
+- (c) 2019 [TD-Hydro](https://www.tdhydro.com)
 
 Released under the MIT License.
 
-You're free to use it for commercial and noncommercial
-application, modify and redistribute it as long as the
-copyright notices are intact. There are no warranties, not
-even that it does what it says to do ;-)
-
+[pyDes](https://github.com/twhiteman/pyDes/blob/master/LICENSE.txt) is released under the MIT License
 
 Changes:
 --------
+2019.02.08 - Python 3 compatible
+
 2015.08.29 - expored to Github
 2009.12.14 - 4. another update
  * replaced crippled_des.py with pyDes

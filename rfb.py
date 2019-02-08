@@ -116,17 +116,17 @@ class RFBClient(Protocol):
     #------------------------------------------------------
 
     def _handleInitial(self):
-        buffer = ''.join(self._packet)
-        if '\n' in buffer:
-            if buffer[:3] == 'RFB':
+        buffer = b''.join(self._packet)
+        if b'\n' in buffer:
+            if buffer[:3] == b'RFB':
                 #~ print "rfb"
-                maj, min = [int(x) for x in buffer[3:-1].split('.')]
+                maj, min = [int(x) for x in buffer[3:-1].split(b'.')]
                 #~ print maj, min
                 if (maj, min) not in [(3,3), (3,7), (3,8)]:
                     log.msg("wrong protocol version\n")
                     self.transport.loseConnection()
             buffer = buffer[12:]
-            self.transport.write('RFB 003.003\n')
+            self.transport.write(b'RFB 003.003\n')
             log.msg("connected\n")
             self._packet[:] = [buffer]
             self._packet_len = len(buffer)
@@ -163,7 +163,9 @@ class RFBClient(Protocol):
 
     def sendPassword(self, password):
         """send password"""
-        pw = (password + '\0' * 8)[:8]        #make sure its 8 chars long, zero padded
+        if type(password) is str:
+            password = bytes(password, "ascii")
+        pw = (password + bytes(8))[:8]        #make sure its 8 chars long, zero padded
         des = RFBDes(pw)
         response = des.encrypt(self._challenge)
         self.transport.write(response)
@@ -193,7 +195,7 @@ class RFBClient(Protocol):
          self.redmax, self.greenmax, self.bluemax,
          self.redshift, self.greenshift, self.blueshift) = \
            unpack("!BBBBHHHBBBxxx", pixformat)
-        self.bypp = self.bpp / 8        #calc bytes per pixel
+        self.bypp = self.bpp // 8        #calc bytes per pixel
         self.expect(self._handleServerName, namelen)
         
     def _handleServerName(self, block):
@@ -373,7 +375,7 @@ class RFBClient(Protocol):
             pos += self.bypp
         if subencoding & 8:     #AnySubrects
             #~ (subrects, ) = unpack("!B", block)
-            subrects = ord(block[pos])
+            subrects = block[pos]
         #~ print subrects
         if subrects:
             if subencoding & 16:    #SubrectsColoured
@@ -397,8 +399,8 @@ class RFBClient(Protocol):
         while pos < end:
             pos2 = pos + self.bypp
             color = block[pos:pos2]
-            xy = ord(block[pos2])
-            wh = ord(block[pos2+1])
+            xy = block[pos2]
+            wh = block[pos2+1]
             sx = xy >> 4
             sy = xy & 0xf
             sw = (wh >> 4) + 1
@@ -412,8 +414,8 @@ class RFBClient(Protocol):
         pos = 0
         end = len(block)
         while pos < end:
-            xy = ord(block[pos])
-            wh = ord(block[pos+1])
+            xy = block[pos]
+            wh = block[pos+1]
             sx = xy >> 4
             sy = xy & 0xf
             sw = (wh >> 4) + 1
@@ -450,9 +452,10 @@ class RFBClient(Protocol):
 
     def _handleExpected(self):
         if self._packet_len >= self._expected_len:
-            buffer = ''.join(self._packet)
+            buffer = b''.join(self._packet)
             while len(buffer) >= self._expected_len:
                 self._already_expecting = 1
+                print(self._expected_len)
                 block, buffer = buffer[:self._expected_len], buffer[self._expected_len:]
                 #~ log.msg("handle %r with %r\n" % (block, self._expected_handler.__name__))
                 self._expected_handler(block, *self._expected_args, **self._expected_kwargs)
@@ -480,7 +483,7 @@ class RFBClient(Protocol):
         self.bpp, self.depth, self.bigendian, self.truecolor = bpp, depth, bigendian, truecolor
         self.redmax, self.greenmax, self.bluemax = redmax, greenmax, bluemax
         self.redshift, self.greenshift, self.blueshift = redshift, greenshift, blueshift
-        self.bypp = self.bpp / 8        #calc bytes per pixel
+        self.bypp = self.bpp // 8        #calc bytes per pixel
         #~ print self.bypp
 
     def setEncodings(self, list_of_encodings):
@@ -586,12 +589,12 @@ class RFBDes(pyDes.des):
            using it as encryption key."""
         newkey = []
         for ki in range(len(key)):
-            bsrc = ord(key[ki])
+            bsrc = key[ki]
             btgt = 0
             for i in range(8):
                 if bsrc & (1 << i):
                     btgt = btgt | (1 << 7-i)
-            newkey.append(chr(btgt))
+            newkey.append(btgt)
         super(RFBDes, self).setKey(newkey)
 
 
@@ -601,25 +604,25 @@ if __name__ == '__main__':
     class RFBTest(RFBClient):
         """dummy client"""
         def vncConnectionMade(self):
-            print "Screen format: depth=%d bytes_per_pixel=%r" % (self.depth, self.bpp)
-            print "Desktop name: %r" % self.name
+            print("Screen format: depth=%d bytes_per_pixel=%r" % (self.depth, self.bpp))
+            print("Desktop name: %r" % self.name)
             self.SetEncodings([RAW_ENCODING])
             self.FramebufferUpdateRequest()
         
         def updateRectangle(self, x, y, width, height, data):
-            print "%s " * 5 % (x, y, width, height, repr(data[:20]))
+            print("%s " * 5 % (x, y, width, height, repr(data[:20])))
     
     class RFBTestFactory(protocol.ClientFactory):
         """test factory"""
         protocol = RFBTest
         def clientConnectionLost(self, connector, reason):
-            print reason
+            print(reason)
             from twisted.internet import reactor
             reactor.stop()
             #~ connector.connect()
     
         def clientConnectionFailed(self, connector, reason):
-            print "connection failed:", reason
+            print("connection failed:", reason)
             from twisted.internet import reactor
             reactor.stop()
 
@@ -634,10 +637,10 @@ if __name__ == '__main__':
     o = Options()
     try:
         o.parseOptions()
-    except usage.UsageError, errortext:
-        print "%s: %s" % (sys.argv[0], errortext)
-        print "%s: Try --help for usage details." % (sys.argv[0])
-        raise SystemExit, 1
+    except usage.UsageError as errortext:
+        print("%s: %s" % (sys.argv[0], errortext))
+        print("%s: Try --help for usage details." % (sys.argv[0]))
+        raise SystemExit
 
     logFile = sys.stdout
     if o.opts['outfile']:
