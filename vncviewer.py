@@ -224,7 +224,6 @@ class PyGameApp:
            by using callLater"""
         #~ self.clock.tick()
         no_work = self.checkEvents()
-
         #~ self.sprites.clear(self.screen, self.background)
         #~ dirty = self.sprites.draw(self.screen)
         #~ pygame.display.update(dirty)
@@ -339,6 +338,7 @@ class RFBToGUIeightbits(RFBToGUI):
         #~ assert len(data) == width*height
         bmp = pygame.image.fromstring(data, (width, height), 'P')
         bmp.set_palette(self.palette)
+        print("data?")
         self.screen.blit(bmp, (x, y))
 
     def fillRectangle(self, x, y, width, height, color):
