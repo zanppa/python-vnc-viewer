@@ -455,7 +455,6 @@ class RFBClient(Protocol):
             buffer = b''.join(self._packet)
             while len(buffer) >= self._expected_len:
                 self._already_expecting = 1
-                print(self._expected_len)
                 block, buffer = buffer[:self._expected_len], buffer[self._expected_len:]
                 #~ log.msg("handle %r with %r\n" % (block, self._expected_handler.__name__))
                 self._expected_handler(block, *self._expected_args, **self._expected_kwargs)
