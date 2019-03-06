@@ -14,11 +14,17 @@ MIT License
 
 import sys
 from struct import pack, unpack
-import pyDes
+
 from twisted.python import usage, log
 from twisted.internet.protocol import Factory, Protocol
 from twisted.internet import protocol
 from twisted.application import internet, service
+
+try:
+    import pyDes
+except:
+    import vnc.pyDes as pyDes
+
 
 #~ from twisted.internet import reactor
 

@@ -21,8 +21,12 @@ from pygame.locals import *
 import sys, struct
 
 #local
-import rfb
-import inputbox
+try:
+    import rfb
+    import inputbox
+except:
+    import vnc.rfb as rfb
+    import vnc.inputbox as inputbox
 
 POINTER = tuple([(8,8), (4,4)] + list(pygame.cursors.compile((
 #01234567
