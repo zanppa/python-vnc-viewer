@@ -466,5 +466,29 @@ def main():
     reactor.run()
 
 
+def InternalCall(host, display, depth):
+    logFile = sys.stdout
+    log.startLogging(logFile)
+    pygame.init()
+    remoteframebuffer = PyGameApp()
+    
+
+    # connect to this host and port, and reconnect if we get disconnected
+    reactor.connectTCP(
+        host,                                   #remote hostname
+        display,                         #TCP port number
+        VNCFactory(
+                remoteframebuffer,              #the application/display
+                depth,                          #color depth
+                True,                 #if a fast connection is used
+                None,             #password or none
+                0,          #shared session flag
+        )
+    )
+
+    # run the application
+    reactor.callLater(0.1, remoteframebuffer.mainloop)
+    reactor.run()
+
 if __name__ == '__main__':
     main()
