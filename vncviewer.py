@@ -136,6 +136,11 @@ class PyGameApp:
         width, height = 640, 480
         self.setRFBSize(width, height)
         pygame.display.set_caption('Python VNC Viewer')
+        try:
+            sicon = pygame.image.load("./res/remote.ico")
+            pygame.display.set_icon(sicon)
+        except:
+            pass
         pygame.mouse.set_cursor(*POINTER)
         pygame.key.set_repeat(500, 30)
         self.clock = pygame.time.Clock()
@@ -467,8 +472,6 @@ def main():
 
 
 def InternalCall(host, display, depth):
-    logFile = sys.stdout
-    log.startLogging(logFile)
     pygame.init()
     remoteframebuffer = PyGameApp()
     
