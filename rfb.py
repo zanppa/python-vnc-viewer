@@ -41,6 +41,11 @@ TIGHT_ENCODING =                7
 ZLIBHEX_ENCODING =              8 
 ZRLE_ENCODING =                 16
 #0xffffff00 to 0xffffffff tight options
+ML_ENCODING = 					-523	# Support for MirrorLink messages
+ML_CONTEXT_ENCODING =			-524	# Support for MirrorLink context information
+DESKTOP_SIZE_ENCODING =			-223	# Support for desktop size change notification
+ML_RLE_ENCODING =				-525	# Scanline based RLE
+
 
 #keycodes
 #for KeyEvent()
@@ -121,6 +126,7 @@ SMSG_FBUPDATE = 		0
 SMSG_SETCOLORMAP = 		1
 SMSG_BELL = 			2
 SMSG_SERVERCUTTEXT = 	3
+SMSG_MIRRORLINK =		128
 
 
 # Client message types
@@ -130,6 +136,134 @@ CMSG_FBUPDATEREQ = 		3
 CMSG_KEYEVENT =			4
 CMSG_POINTEREVENT =		5
 CMSG_CLIENTCUTTEXT =	6
+CMSG_MIRRORLINK =		128
+
+# Mirrorlink messages
+ML_BYEBYE = 			0
+ML_SERVERDISPCONF =		1
+ML_CLIENTDISPCONF = 	2
+ML_SERVEREVENTCONF =	3
+ML_CLIENTEVENTCONF =	4
+ML_EVENTMAPPING = 		5	# Client deprecated
+ML_EVENTMAPPINGREQ =	6	# Client deprecated
+ML_KEYEVENTLIST =		7	# Deprecated
+ML_KEYEVENTLISTREQ =	8	# Deprecated
+ML_VIRTKEYTRIG =		9	# Deprecated
+ML_VIRTKEYTRIGREQ =		10	# Deprecated
+ML_DEVICESTATUS =		11
+ML_DEVICESTATUSREQ =	12
+ML_CONTENTATTRESP =		13	# Should implement
+ML_CONTENATTREQ =		14	# Should implement
+ML_FBBLOCKNOTI =		16
+ML_AUDIOBLOCKNOTI =		18
+ML_TOUCHEVENT =			20	# Should
+ML_FBALTTEXT =			21	# Deprecated
+ML_FBALTTEXTREQ =		22	# Deprecated
+
+
+# MirrorLink server display configuration
+ML_ServerDispConf = {
+	"Major" : 0,
+	"Minor" : 0,
+	"FB_orientation_sw_avail" : 0,	# Deprecated
+	"FB_rotation_avail" : 0, 		# Deprecated
+	"FB_upscaling_avail" : 0,		# Deprecated
+	"FB_downscaling_avail" : 0,
+	"FBAltText_supported" : 0,		# Deprecated
+	"rel_pixelwidth" : 1,			# Deprecated
+	"rel_pixelheight" : 1,			# Deprecated
+	"ARGB888" : 0,
+	"Any32bit" : 0,					# Deprecated
+	"RGB888" : 0,					# Deprecated
+	"Any24bit" : 0,					# Deprecated
+	"RGB565" : 0,
+	"RGB555" : 0,					# Deprecated
+	"RGB444" : 0,					# Deprecated
+	"RGB434" : 0,					# Deprecated
+	"Any16bit" : 0,					# Deprecated
+	"16bitgray" : 0,				# Deprecated
+	"8bitgray" : 0, 				# Deprecated
+}
+
+# MirroLink client display configuration
+ML_ClientDispConf = {
+	"Major" : 1,
+	"Minor" : 0,
+	"FB_orientation_sw_used" : 0,	# Deprecated
+	"FB_rotation_used" : 0,			# Deprecated
+	"FB_upscaling_avail" : 0,
+	"FB_downscaling_avail" : 0,		# Deprecated
+	"FBAltText_supported" : 0,		# Deprecated
+	"width_px" : 0,
+	"height_px" : 0,
+	"width_mm" : 0,
+	"height_mm" : 0,
+	"distance_user_mm" : 0,
+	"pixel_format_support" : 0x1,	# Deprecated, set to 0x1=ARGB888, 0x10000=RGB565, 0x10001=Both
+	"resize_factors" : 0,			# Deprecated
+}
+
+# MirrorLink event configuration (client & server)
+ML_EventConf = {
+	"keyboard_lang" : b'en',		# ISO 639-1
+	"keyboard_contry" : b'us',		# ISO 3166-1 alpha-2
+	"UI_lang": b'en',				# ISO 639-1
+	"UI_country": b'us',			# ISO 3166-1 alpha-2
+	"knob_keys" : 0,
+	"device_keys" : 0,
+	"multimedia_keys" : 0,
+	"ITU_keypad" : 0,				# Deprecated
+	"virtkey_trigger" : 0,			# Deprecated
+	"keylist_support" : 0,			# Deprecated
+	"evmap_support" : 0,			# Deprecated
+	"fn_keys" : 0,
+	"pointer_events" : 0,
+	"touch_events" : 0,
+	"pointer_mask" : 0,				# Pointer event maask (RFB spec)
+	"simult_touch" : 0,				# N of simultaneous touch events
+	"pressure_mask" : 0,
+}
+
+# MirrorLink status (request & reply)
+ML_DeviceStatus = {
+	"key-lock" : 0,					# Deprecated
+	"device_lock" : 0,				# Deprecated
+	"screen_saver" : 0,				# Deprecated
+	"night_mode" : 0,
+	"voice_input" : 0,
+	"mic_input" : 0,
+	"driving_mode" : 0,
+	"fb_rotation" : 0,				# Deprecated (clock-wise)
+	"fb_orientation" : 10,			# Deprecated
+}
+
+# MirrorLink Framebuffer Blocking Notifications
+ML_FBBlocking = {
+	"x" : 0,
+	"y" : 0,
+	"width" : 0,
+	"height" : 0,
+	"appID" : 0,
+	"content_cat" : 0,
+	"app_cat" : 0,
+	"trust_level" : 0,
+	"content_rules" : 0,
+	"NA_app_ID" : 0,
+	"UI_not_focus" : 0,
+	"UI_not_visible" : 0,
+	"UI_layout" : 0,
+}
+
+# MirrorLink Audio blocking notifications
+ML_AudioBlocking = {
+	"appID" : 0,
+	"app_cat" : 0,
+	"trust_level" : 0,
+	"NA_app_ID" : 0,
+	"muted" : 0,
+	"stream_muted" : 0,
+}
+
 
 class RFBClient(Protocol):
     
@@ -292,6 +426,8 @@ class RFBClient(Protocol):
             self.expect(self._handleServerCutText, 7)
 		# elif msgid == SMSG_SETCOLORMAP:
 			# TODO: Implement
+		elif msgid == SMSG_MIRRORLINK:
+			self.expect(self._handleMLinkMsg, 3)
         else:
             log.msg("unknown message received (id %d)\n" % msgid)
             self.expect(self._handleConnection, 1)
@@ -516,6 +652,13 @@ class RFBClient(Protocol):
         self.copy_text(block)
         self.expect(self._handleConnection, 1)
     
+	#------------------------------------------------------
+	# Mirrorlink extension messages server -> client
+	#------------------------------------------------------
+	def _handleMLinkMsg(self, block):
+		(type, length) = unpack("!B!H", block)
+	
+	
     #------------------------------------------------------
     # incomming data redirector
     #------------------------------------------------------
@@ -589,7 +732,36 @@ class RFBClient(Protocol):
         """
         self.transport.write(pack("!BxxxI", CMSG_CLIENTCUTTEXT, len(message)) + message)
 
+		
+	#------------------------------------------------------
+	# Mirrorlink extension messages client -> server
+	#------------------------------------------------------
+	def ML_byebye(self):
+		"""Send byebye -> request termination of connection"""
+		self.transport.write(pack("!B!B!H", CMSG_MIRRORLINK, ML_BYEBYE, 0))
+	
+	def ML_clientDispConf(self, conf):
+		"""Send the client display configuration array"""
+		fb_conf = 	0x01 if conf["FB_orientation_sw_used"] else 0 |
+					0x02 if conf["FB_rotation_used"] else 0 |
+					0x04 if conf["FB_upscaling_avail" ] else 0 |
+					0x08 if conf["FB_downscaling_avail"] else 0 |
+					0x20 if conf["FBAltText_supported" ] else 0
+					
+		self.transport.write(pack("!B!B!H!B!B!H!H!H!H!H!H!I!I", CMSG_MIRRORLINK, ML_CLIENTDISPCONF,
+				conf["Major"], conf["Minor"],
+				fb_conf,
+				conf["width_px"], conf["height_px"],
+				conf["width_mm"], conf["height_mm"], conf[""distance_user_mm"],
+				conf["pixel_format_support"], conf["resize_factors"]))
+	
+	def ML_eventMappingReq(self, client_key, server_key):
+		"""Request to remap keys"""
+		self.transport.write(pack("!B!B!H!I!I", CMSG_MIRRORLINK, ML_EVENTMAPPINGREQ,
+				8, client_key, server_key))
+	
 
+	
     #------------------------------------------------------
     # callbacks
     # override these in your application
