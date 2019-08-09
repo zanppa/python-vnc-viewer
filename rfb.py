@@ -118,10 +118,18 @@ AUTH_VNCAUTH = 	2
 
 # Server message types
 SMSG_FBUPDATE = 		0
-SMSG_SETCOLORMAP = 	1
+SMSG_SETCOLORMAP = 		1
 SMSG_BELL = 			2
 SMSG_SERVERCUTTEXT = 	3
 
+
+# Client message types
+CMSG_SETPIXELFORMAT = 	0
+CMSG_SETENCODINGS =		2
+CMSG_FBUPDATEREQ = 		3
+CMSG_KEYEVENT =			4
+CMSG_POINTEREVENT =		5
+CMSG_CLIENTCUTTEXT =	6
 
 class RFBClient(Protocol):
     
@@ -545,7 +553,7 @@ class RFBClient(Protocol):
     
     def setPixelFormat(self, bpp=32, depth=24, bigendian=0, truecolor=1, redmax=255, greenmax=255, bluemax=255, redshift=0, greenshift=8, blueshift=16):
         pixformat = pack("!BBBBHHHBBBxxx", bpp, depth, bigendian, truecolor, redmax, greenmax, bluemax, redshift, greenshift, blueshift)
-        self.transport.write(pack("!Bxxx16s", 0, pixformat))
+        self.transport.write(pack("!Bxxx16s", CMSG_SETPIXELFORMAT, pixformat))
         #rember these settings
         self.bpp, self.depth, self.bigendian, self.truecolor = bpp, depth, bigendian, truecolor
         self.redmax, self.greenmax, self.bluemax = redmax, greenmax, bluemax
@@ -554,33 +562,34 @@ class RFBClient(Protocol):
         #~ print self.bypp
 
     def setEncodings(self, list_of_encodings):
-        self.transport.write(pack("!BxH", 2, len(list_of_encodings)))
+        self.transport.write(pack("!BxH", CMSG_SETENCODINGS, len(list_of_encodings)))
         for encoding in list_of_encodings:
             self.transport.write(pack("!I", encoding))
     
     def framebufferUpdateRequest(self, x=0, y=0, width=None, height=None, incremental=0):
         if width  is None: width  = self.width - x
         if height is None: height = self.height - y
-        self.transport.write(pack("!BBHHHH", 3, incremental, x, y, width, height))
+        self.transport.write(pack("!BBHHHH", CMSG_FBUPDATEREQ, incremental, x, y, width, height))
 
     def keyEvent(self, key, down=1):
         """For most ordinary keys, the "keysym" is the same as the corresponding ASCII value.
         Other common keys are shown in the KEY_ constants."""
-        self.transport.write(pack("!BBxxI", 4, down, key))
+        self.transport.write(pack("!BBxxI", CMSG_KEYEVENT, down, key))
 
     def pointerEvent(self, x, y, buttonmask=0):
         """Indicates either pointer movement or a pointer button press or release. The pointer is
            now at (x-position, y-position), and the current state of buttons 1 to 8 are represented
            by bits 0 to 7 of button-mask respectively, 0 meaning up, 1 meaning down (pressed).
         """
-        self.transport.write(pack("!BBHH", 5, buttonmask, x, y))
+        self.transport.write(pack("!BBHH", CMSG_POINTEREVENT, buttonmask, x, y))
 
     def clientCutText(self, message):
         """The client has new ASCII text in its cut buffer.
            (aka clipboard)
         """
-        self.transport.write(pack("!BxxxI", 6, len(message)) + message)
-    
+        self.transport.write(pack("!BxxxI", CMSG_CLIENTCUTTEXT, len(message)) + message)
+
+
     #------------------------------------------------------
     # callbacks
     # override these in your application
