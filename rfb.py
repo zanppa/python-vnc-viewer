@@ -224,10 +224,10 @@ class RFBClient(Protocol):
             self._doClientInitialization()
             return
         elif result == 1:   #failed
-            self.vncAuthFailed("autenthication failed")
 			if self.version_min > 7: # 3.8 and upwards
 				self.expect(self._handleAuthError, 4)
 			else:
+				self.vncAuthFailed("authentication failed")
 				self.transport.loseConnection()
         elif result == 2:   #too many (Not in RFC 6143)
             slef.vncAuthFailed("too many tries to log in")
@@ -240,7 +240,8 @@ class RFBClient(Protocol):
 		self.expect(self._handleAuthMessage(self, waitfor)
 		
 	def _handleAuthMessage(self, block):
-		log.msg("Authentication failed: %2\n", % block)
+		#log.msg("Authentication failed: %2\n", % block)
+		self.vncAuthFailed(block)
 		self.transport.loseConnection()	
 		
     def _doClientInitialization(self):
