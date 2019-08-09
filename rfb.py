@@ -462,6 +462,8 @@ class RFBClient(Protocol):
                 self.expect(self._handleDecodeRRE, 4 + self.bypp, x, y, width, height)
             #~ elif encoding == ZRLE_ENCODING:
                 #~ self.expect(self._handleDecodeZRLE, )
+			elif encoding == DESKTOP_SIZE_ENCODING:
+				self.desktopSizeChanged(width, height)
             else:
                 log.msg("unknown encoding received (encoding %d)\n" % encoding)
                 self._doConnection()
@@ -817,6 +819,10 @@ class RFBClient(Protocol):
     def copy_text(self, text):
         """The server has new ASCII text in its cut buffer.
            (aka clipboard)"""
+		   
+	def desktopSizeChanged(self, width, height):
+		"""VNC Server's desktop size has changed"""
+		
 
 class RFBFactory(protocol.ClientFactory):
     """A factory for remote frame buffer connections."""
