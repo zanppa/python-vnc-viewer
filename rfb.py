@@ -41,6 +41,7 @@ TIGHT_ENCODING =                7
 ZLIBHEX_ENCODING =              8 
 ZRLE_ENCODING =                 16
 #0xffffff00 to 0xffffffff tight options
+CURSOR_ENCODING =				-239	# Cursor position pseudo-encoding
 
 #keycodes
 #for KeyEvent()
@@ -326,6 +327,8 @@ class RFBClient(Protocol):
                 self.expect(self._handleDecodeRRE, 4 + self.bypp, x, y, width, height)
             #~ elif encoding == ZRLE_ENCODING:
                 #~ self.expect(self._handleDecodeZRLE, )
+			elif encoding == CURSOR_ENCODING:
+				self.expect(self._handleDecodeCursor, width*height*self.bypp + ((width+7)//8)*height, x, y, width, height)
             else:
                 log.msg("unknown encoding received (encoding %d)\n" % encoding)
                 self._doConnection()
@@ -505,6 +508,31 @@ class RFBClient(Protocol):
     
     def _handleDecodeZRLE(self, block):
         raise NotImplementedError
+		
+	# --- Cursor Pseudo Encoding
+	
+	def _handleDecodeCursor(self, block, x, y, width, height):
+		# Decode cursor to array
+		pos = 0
+		cursor = [[0 for x in range(width)] for y in range(height)]
+		for x in range(width):
+			for y in range(height):
+				pos2 = pos + self.bypp
+				cursor[x, y] = block[pos:pos2]
+				pos += self.bypp
+
+		# Decode mask to array, 1 bit / pixel (MSb is leftmost)
+		mask_width = (width+7)//8
+		mask = [[0 for x in range(mask_width)] for y in range(height)
+		for x in range(mask_width):
+			for y in range(height):
+				mask[x, y] = block[pos]
+				pos += 1
+
+		self.cursorEvent(x, y, width, height, cursor, mask)
+		
+
+	width*height*self.bypp + ((width+7)//8)*height, x, y, width, height)
 
     # ---  other server messages
     
@@ -645,6 +673,10 @@ class RFBClient(Protocol):
     def copy_text(self, text):
         """The server has new ASCII text in its cut buffer.
            (aka clipboard)"""
+		   
+	def cursorEvent(self, x, y, width, height, cursor, mask):
+		"""Server sent cursor position, picture and mask"""
+		
 
 class RFBFactory(protocol.ClientFactory):
     """A factory for remote frame buffer connections."""
