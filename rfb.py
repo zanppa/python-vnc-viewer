@@ -109,6 +109,13 @@ KEY_KP_8 =      0xFFB8
 KEY_KP_9 =      0xFFB9
 KEY_KP_Enter =  0xFF8D
 
+
+# Authentication protocol types
+AUTH_FAIL =		0
+AUTH_NONE = 	1
+AUTH_VNCAUTH = 	2
+
+
 class RFBClient(Protocol):
     
     def __init__(self):
@@ -123,7 +130,7 @@ class RFBClient(Protocol):
 
     def _handleInitial(self):
         buffer = b''.join(self._packet)
-        if b'\n' in buffer:
+        if b'\n' in buffer and self._packet_len >= 12:
             if buffer[:3] == b'RFB':
                 #~ print "rfb"
                 maj, min = [int(x) for x in buffer[3:-1].split(b'.')]
@@ -132,40 +139,73 @@ class RFBClient(Protocol):
                     log.msg("wrong protocol version\n")
                     self.transport.loseConnection()
             buffer = buffer[12:]
-            self.transport.write(b'RFB 003.003\n')
+            self.transport.write(b'RFB {:03d}.{03d}\n'.format(maj, min))
+			self.version_major = maj
+			self.version_min = min
             log.msg("connected\n")
             self._packet[:] = [buffer]
             self._packet_len = len(buffer)
             self._handler = self._handleExpected
-            self.expect(self._handleAuth, 4)
+			if min == 3:
+				self.expect(self._handleAuth33, 4)
+			else:
+				self.expect(self._handleAuth37, 1)
         else:
             self._packet[:] = [buffer]
             self._packet_len = len(buffer)
     
-    def _handleAuth(self, block):
+    def _handleAuth33(self, block):
+		"""Handle security handshake for protocol version 3.3.
+		In this version, the server decides the protocol (failed, none or VNCAuth)"""
         (auth,) = unpack("!I", block)
         #~ print "auth:", auth
-        if auth == 0:
+        if auth == AUTH_FAIL:
             self.expect(self._handleConnFailed, 4)
-        elif auth == 1:
+        elif auth == AUTH_NONE:
             self._doClientInitialization()
             return
-        elif auth == 2:
+        elif auth == AUTH_VNCAUTH:
             self.expect(self._handleVNCAuth, 16)
         else:
             log.msg("unknown auth response (%d)\n" % auth)
 
-    def _handleConnFailed(self):
+    def _handleAuth37(self, block):
+		"""Handle security handshake for protocol version 3.7 and upwards.
+		In this version the protocol is negotiated with the client.
+		This resolves the amount of supported types."""
+        (types,) = unpack("!I", block)
+        self.expect(self._handleAuthTypes37, types)
+		
+	def _handleAuthTypes37(self, auth):
+		"""Security handshake for version 3.7 upwards. This lists
+		and selects a suitable authentication type (highest supported)."""
+		#~ print "auth:", auth
+		if AUTH_VNCAUTH in auth:
+            self.expect(self._handleVNCAuth, 16)
+		elif AUTH_NONE in auth:
+			if self.version_min <= 7:
+				self._doClientInitialization()
+			else: # 3.8 and upwards
+				self.expect(self._handleAuthResult, 4)
+            return
+        elif AUTH_FAIL in auth:
+            self.expect(self._handleConnFailed, 4)
+        else:
+            log.msg("no supported auth types (%d)\n" % auth) # TODO: Fix print of array
+
+    def _handleConnFailed(self, block):
         (waitfor,) = unpack("!I", block)
         self.expect(self._handleConnMessage, waitfor)
 
     def _handleConnMessage(self, block):
         log.msg("Connection refused: %r\n" % block)
 
+
+	
     def _handleVNCAuth(self, block):
         self._challenge = block
         self.vncRequestPassword()
-        self.expect(self._handleVNCAuthResult, 4)
+        self.expect(self._handleAuthResult, 4)
 
     def sendPassword(self, password):
         """send password"""
@@ -176,7 +216,8 @@ class RFBClient(Protocol):
         response = des.encrypt(self._challenge)
         self.transport.write(response)
     
-    def _handleVNCAuthResult(self, block):
+    def _handleAuthResult(self, block):
+		"""Handle the server result for authentication."""
         (result,) = unpack("!I", block)
         #~ print "auth:", auth
         if result == 0:     #OK
@@ -184,13 +225,24 @@ class RFBClient(Protocol):
             return
         elif result == 1:   #failed
             self.vncAuthFailed("autenthication failed")
-            self.transport.loseConnection()
-        elif result == 2:   #too many
+			if self.version_min > 7: # 3.8 and upwards
+				self.expect(self._handleAuthError, 4)
+			else:
+				self.transport.loseConnection()
+        elif result == 2:   #too many (Not in RFC 6143)
             slef.vncAuthFailed("too many tries to log in")
             self.transport.loseConnection()
         else:
             log.msg("unknown auth response (%d)\n" % auth)
-        
+       
+	def _handleAuthError(self, block):
+		(waitfor,) = unpack("!I", block)
+		self.expect(self._handleAuthMessage(self, waitfor)
+		
+	def _handleAuthMessage(self, block):
+		log.msg("Authentication failed: %2\n", % block)
+		self.transport.loseConnection()	
+		
     def _doClientInitialization(self):
         self.transport.write(pack("!B", self.factory.shared))
         self.expect(self._handleServerInit, 24)
