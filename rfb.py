@@ -116,6 +116,13 @@ AUTH_NONE = 	1
 AUTH_VNCAUTH = 	2
 
 
+# Server message types
+SMSG_FBUPDATE = 		0
+SMSG_SETCOLORMAP = 	1
+SMSG_BELL = 			2
+SMSG_SERVERCUTTEXT = 	3
+
+
 class RFBClient(Protocol):
     
     def __init__(self):
@@ -268,17 +275,19 @@ class RFBClient(Protocol):
     #------------------------------------------------------
     def _handleConnection(self, block):
         (msgid,) = unpack("!B", block)
-        if msgid == 0:
+        if msgid == SMSG_FBUPDATE:
             self.expect(self._handleFramebufferUpdate, 3)
-        elif msgid == 2:
+        elif msgid == SMSG_BELL:
             self.bell()
             self.expect(self._handleConnection, 1)
-        elif msgid == 3:
+        elif msgid == SMSG_SERVERCUTTEXT:
             self.expect(self._handleServerCutText, 7)
+		# elif msgid == SMSG_SETCOLORMAP:
+			# TODO: Implement
         else:
             log.msg("unknown message received (id %d)\n" % msgid)
             self.expect(self._handleConnection, 1)
-        
+
     def _handleFramebufferUpdate(self, block):
         (self.rectangles,) = unpack("!xH", block)
         self.rectanglePos = []
